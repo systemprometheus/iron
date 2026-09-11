@@ -1234,6 +1234,7 @@ function togglePause(btn){
 /* =========================================================
    PROGRAM DATA
    ========================================================= */
+ANIMS.hangraise=Object.assign({},ANIMS.dips);
 const CUES = {
 sledDrag:{c:["Face the sled, small backward steps, toes pointing at it","Push the floor away through your whole foot — feel the quads","Chest tall, arms long, steady rhythm — no yanking"],m:["Steps too big — turns it into a hamstring pull","Rising onto toes instead of loading the whole foot"]},
 sledPush:{c:["Low body angle, arms locked long on the posts","Drive the legs like pistons — hips do the work","Full-foot contact, push the ground behind you"],m:["Hips too high, back flat like a table — drop the chest","Choppy sprint steps — keep it powerful and smooth"]},
@@ -1244,6 +1245,7 @@ hamcurl:{c:["Curl under control — 2 seconds up, 3 seconds down","Hips stay pre
 stepup:{c:["Whole foot on the box, knee tracking over the toes","Drive through the top leg — don't jump off the bottom one","Slow 3-second lowering — that's where the gold is"],m:["Pushing off the floor leg — it's a top-leg exercise","Box too high — knee-height or lower for now"]},
 calf:{c:["Rise all the way onto the balls of your feet","Pause 1 second at the top","Lower slowly through the fullest range you have"],m:["Bouncing out of the bottom","Cutting the range short at the top"]},
 pullup:{c:["Start from a dead hang, shoulders pulled down first","Drive elbows down and back — chest toward the bar","Lower under full control, no dropping"],m:["Kipping or swinging for extra reps","Half reps — no full hang at the bottom"]},
+hangraise:{c:["Dead hang, shoulders slightly engaged \u2014 not fully shrugged","Knees to chest and CURL the pelvis up at the top","2\u20133 s lower, dead stop, no swing"],m:["Swinging \u2014 smaller and stricter beats bigger and kipping","Lifting thighs with a hollow back and no pelvic curl"]},
 latpull:{c:["Lean back slightly, chest up, pull the bar to your collarbone","Lead with the elbows, not the hands","Let the arms fully lengthen at the top each rep"],m:["Rocking the torso to heave the weight down","Pulling behind the neck"]},
 row:{c:["Pull the handle to your lower ribs","Squeeze the shoulder blades together at the back","Torso stays quiet — a slight hinge is fine, no rowing machine swing"],m:["Shrugging the shoulders up toward the ears","Yanking with the arms before the back engages"]},
 facepull:{c:["Pull the rope toward your eyes, elbows high and wide","Finish with thumbs pointing behind you","Light weight, high reps — this is posture medicine"],m:["Turning it into a row — elbows must stay high","Going heavy and losing the rotation"]},
@@ -1285,7 +1287,7 @@ const DAYS = [
   ex:[
     ex('Backward Sled Drag','sledDrag','4 \u00d7 20\u201330 m \u00b7 effort 7\u20138 \u00b7 rest 75 s',4,['sled','knee'],'Your #1 ACL builder and the perfect knee warm-up for the press. 40\u201350 kg: DRAG hard (short quick steps, effort 7\u20138), then PUSH the sled back easy as your return trip \u2014 the push is transport, not work. If press quality drops later, lighten these \u2014 not the press.','Sled track'),
     ex('Single-Leg Leg Press','slpress','3 \u00d7 8\u201312 / leg \u00b7 injured leg first \u00b7 rest 90 s',3,['knee'],'The key strength lift. Injured leg sets weight and depth for both. Depth progression is criteria-based, not calendar-based: progress a notch only when there\u2019s no swelling, no instability, no next-day pain and reps look clean. Foot mid-plate or slightly high; whole foot pressing.','Technogym seated leg press'),
-    ex('Lying / Seated Ham Curl','hamcurl','3 \u00d7 10\u201315 \u00b7 rest 90 s',3,['knee'],'The hamstring is the ACL\u2019s bodyguard \u2014 never skip it. Switch to single-leg once the L-R gap is known.','Hammer Strength seated leg curl'),
+    ex('Lying / Seated Ham Curl','hamcurl','3 \u00d7 10\u201315 \u00b7 rest 90 s',3,['knee'],'The hamstring is the ACL\u2019s bodyguard \u2014 never skip it. Switch to single-leg once the L-R gap is known. \u27f7 Superset with calf raises \u2014 saves \u22484 min, nothing shared.','Hammer Strength seated leg curl'),
     ex('Calf Raise (machine)','calf','3 \u00d7 12\u201320 \u00b7 rest 60 s',3,[],'Slow deep stretch at the bottom, pause at the top. Muay Thai ankles are built here.'),
     ex('VO\u2082max Sled Shuttle','sledPush','4 \u00d7 3 min ON \u00b7 rest 3 min walk \u00b7 target 160\u2013172 bpm',4,['sled','knee'],'THE longevity engine \u2014 weekly, non-negotiable. Load: 35 kg (proven 2026-09-07 \u2014 four clean peaks). Pace is the throttle: build each round smoothly and FINISH at 160\u2013172 bpm; no minute-one sprint, no 180 hero surge. Sustained 177+ = too heavy/hard; under 155 = walk faster NOW. Recovery: below \u2248130 before the next round. Progress minutes (\u21924\u00d74) before weight.','Sled track \u00b7 35 kg')
   ]},
@@ -1295,7 +1297,8 @@ const DAYS = [
     ex('Lat Pulldown or Pull-ups','latpull','3 \u00d7 8\u201312 \u00b7 rest 90 s',3,[],'First, on fresh grip \u2014 that\u2019s the fix from the farmer\u2019s-walk lesson. Width lives here.'),
     ex('Machine / Chest-Supported Row','row','3 \u00d7 8\u201312 \u00b7 rest 90 s',3,[],'Chest glued to the pad, drive the elbows, squeeze a beat, slow stretch back.'),
     ex('Cable Face Pull','facepull','2 \u00d7 12\u201315 \u00b7 light \u00b7 rest 60 s',2,[],'Your rear-delt slot \u2014 chosen over the fly machines. Rope at face height, pull toward the eyes, elbows high and wide, thumbs back at the finish. Rear delts + posture medicine in one; elbow-friendly. If you load it heavy you\u2019ve ruined it.','Cable column \u00b7 rope attachment'),
-    ex('Biceps Curls','curl','5 \u00d7 8\u201312 \u00b7 rest 60\u201375 s',5,[],'Option B bump: 5 sets, first of two weekly slots. HAMMER GRIP (palms facing) is the default while the golfer\u2019s elbow settles \u2014 wrists dead straight, \u22642/10 elbow, slow negatives, skip failure sets.','Dumbbells \u2014 hammer grip'),
+    ex('Lateral Raise (light)','lateral','2 \u00d7 15\u201320 \u00b7 light \u00b7 rest 45\u201360 s',2,[],'V-taper add: second weekly delt touch \u2014 lateral delts are the #1 lever for the shoulder-to-waist ratio. Light and strict; Thursday stays the heavy slot. \u27f7 Superset with face pulls \u2014 they share nothing.','Machine lateral raise'),
+    ex('Biceps Curls','curl','5 \u00d7 8\u201312 \u00b7 rest 60\u201375 s',5,[],'Option B bump: 5 sets, first of two weekly slots. HAMMER GRIP (palms facing) is the default while the golfer\u2019s elbow settles \u2014 wrists dead straight, \u22642/10 elbow, slow negatives, skip failure sets. \u27f7 Superset option: alternate sets with the face pulls / lateral raises.','Dumbbells \u2014 hammer grip'),
     ex('Easy Cardio Mix','bike','20 min \u00b7 any mix \u00b7 \u2764\ufe0f 118\u2013137 bpm',1,['knee'],'Zone 2 aerobic base: 118\u2013137 bpm (65\u201375% of 183). Well-trained sweet spot \u2248 125\u2013135 \u2014 nose-breathing, full sentences. Drifting to 140 on inclines is fine; sustained 145+ means ease off. Bike, incline walk 3\u20136%, elliptical or light sled flow, any combination.'),
     ex('Neck Curls','neck','2 \u00d7 15 front + 15 back',2,[],'Do these during sled or cardio cool-down \u2014 they cost zero extra time. Slow, bodyweight for 6\u20138 weeks.')
   ]},
@@ -1305,7 +1308,7 @@ const DAYS = [
     ex('Single-Leg Balance','balance','3 \u00d7 30\u201360 s / side',3,['phys'],'First \u2014 precision work on completely fresh legs. Wobbling is the exercise working.'),
     ex('Hip Machine \u2014 push apart (abductor)','abductor','2 \u00d7 12\u201315 \u00b7 rest 60 s',2,['knee'],'Outer hip \u2014 stops the knee collapsing inward.'),
     ex('Hip Machine \u2014 squeeze together (adductor)','adductor','2 \u00d7 12\u201315 \u00b7 rest 60 s',2,['knee'],'Inner thigh \u2014 the other half of knee steering. Comfortable range only.'),
-    ex('Seated Leg Curl','hamcurl','2\u20133 \u00d7 10\u201315 \u00b7 rest 60\u201375 s',3,['knee'],'Review upgrade: hamstrings now 5\u20136 sets/week \u2014 the flagged L-R gap muscle. Light-moderate, crisp reps; this stays easy-day friendly.','Hammer Strength seated leg curl'),
+    ex('Seated Leg Curl','hamcurl','2\u20133 \u00d7 10\u201315 \u00b7 rest 60\u201375 s',3,['knee'],'Review upgrade: hamstrings now 5\u20136 sets/week \u2014 the flagged L-R gap muscle. SINGLE-LEG from now on, injured leg first, same load both sides \u2014 this is the L-R gap measurement slot. \u27f7 Superset with balance work.','Hammer Strength seated leg curl'),
     ex('Easy Cardio Mix','bike','40\u201350 min \u00b7 any mix \u00b7 \u2764\ufe0f 118\u2013137 bpm',1,['sled','knee'],'The longest easy block of the week \u2014 Zone 2, 118\u2013137 bpm (aim \u2248 125\u2013135). If HR climbs past \u2248140 as the session wears on, slow down rather than stop \u2014 holding the zone IS the training. Any blend: bike, incline walk, elliptical, light sled drags. Sled counts only if it stays truly light.')
   ]},
 { id:4, title:'Push + Arms + Farmer', lab:'Push \u00b7 Arms', time:'65\u201375 min',
@@ -1313,10 +1316,11 @@ const DAYS = [
   ex:[
     ex('Machine Chest Press','chestpress','3 \u00d7 6\u201310 \u00b7 stop 1\u20132 reps shy \u00b7 rest 2 min',3,[],'Heaviest lift first, fresh. Trimmed to 3 sets \u2014 incline now carries the extra pressing volume.','Machine chest press'),
     ex('Incline Machine Press','chestpress','4 \u00d7 8\u201312 \u00b7 rest 90 s',4,[],'Option B bump: 4 sets \u2014 the upper-chest builder and the single biggest \u201cathletic look\u201d lift in the plan.','Incline machine press'),
-    ex('Machine Lateral Raise','lateral','3 \u00d7 12\u201320 \u00b7 rest 60 s',3,[],'Shoulder width. Stop at shoulder height; a top-of-shoulder pinch means lighten, not push through.','Machine lateral raise'),
+    ex('Machine Lateral Raise','lateral','3 \u00d7 12\u201320 \u00b7 rest 60 s',3,[],'Shoulder width. Stop at shoulder height; a top-of-shoulder pinch means lighten, not push through. \u27f7 Superset with triceps press \u2014 delts rest while triceps work.','Machine lateral raise'),
     ex('Dips','dips','3 \u00d7 5\u20138 \u00b7 rest 90 s',3,[],'The triceps anchor. At 10\u201312 clean reps, add weight (belt or dumbbell between knees) \u2014 weighted dips are your best arm builder.'),
     ex('Triceps Press Machine','pushdown','3 \u00d7 10\u201315 \u00b7 rest 60\u201375 s',3,[],'Option B bump: 3 sets \u2014 straight after dips, the volume dips alone can\u2019t give. Last set to failure is fine; the machine fails safely.','Triceps press machine'),
     ex('Biceps Curls','curl','2 \u00d7 10\u201315 \u00b7 rest 60 s',2,[],'Second weekly slot. Hammer grip default (golfer\u2019s elbow rule), wrists straight, strict.','Dumbbells \u2014 hammer grip'),
+    ex('Lat Pulldown (Thu top-up)','latpull','2 \u00d7 10\u201312 \u00b7 rest 75 s',2,[],'V-taper add: second weekly back touch \u2014 width lever #2. Antagonist relief after all the pressing; moderate, crisp, no grinding.','Lat pulldown station'),
     ex('Farmer\u2019s Walk','carry','4 \u00d7 30 m \u00b7 heavy \u00b7 rest 90 s',4,[],'Still last \u2014 pressing needs no grip. Trimmed to 4 rounds to pay for the new arm work.'),
     ex('Neck Curls','neck','2 \u00d7 15 front + 15 back',2,[],'Do them during farmer\u2019s-walk rests \u2014 zero extra minutes.')
   ]},
@@ -1326,7 +1330,8 @@ const DAYS = [
     ex('Leg Press (two-leg)','slpress','2\u20133 \u00d7 8\u201312 \u00b7 moderate \u00b7 rest 90 s',3,['knee'],'Review upgrade: second weekly quad dose (LSI >90% quad strength is the #1 return-to-sport predictor). Moderate two-leg work \u2014 primes the combo rounds, never to failure.','Technogym seated leg press'),
     ex('Sled Combo Rounds','sledPush','5 \u00d7 (10 m drag + 10 m push) @ 70 kg \u00b7 rest 75\u201390 s',5,['sled','knee'],'Horsepower day: BOTH directions hard. All five rounds fast = earn a 6th; weight is the progression lever, push speed is the gauge, Saturday-morning knee is the veto.','Sled track \u00b7 70 kg'),
     ex('Pallof Press','pallof','3 \u00d7 10 / side \u00b7 hold each rep 2\u20133 s',3,[],'Low load \u2014 fine after the hard work. Med-ball throws stay shelved until physio clears rotation.'),
-    ex('Side Plank','sideplank','3 \u00d7 30 s / side',3,[],'Simple, fight-specific trunk strength.'),
+    ex('Side Plank','sideplank','3 \u00d7 30 s / side',3,[],'Simple, fight-specific trunk strength. \u27f7 Superset with Pallof \u2014 both low-load, same corner of the gym.'),
+    ex('Hanging Leg Raises','hangraise','2 \u00d7 8\u201312 \u00b7 rest 60\u201375 s',2,[],'V-taper add: the visible-abs slot \u2014 rectus + pelvic curl, zero knee cost, grip bonus. Bent knees until 2\u00d712 is clean, then straighten. The deficit reveals what these build.','Pull-up bar'),
     ex('Battle Ropes Finisher','ropes','8 \u00d7 30 s all-out \u00b7 rest 60 s \u00b7 \u2764\ufe0f spikes 150\u2013170',8,[],'Anaerobic fight engine \u2014 HR will spike to 150\u2013170 bpm and only partially recover in the 60 s; that incomplete recovery is the point. No target to hold \u2014 the effort is all-out arms, the HR just follows. Zero knee impact.')
   ]},
 { id:6, title:'Long Game Day', lab:'Zone 2 \u00b7 Recover', time:'50\u201370 min',
@@ -1868,7 +1873,8 @@ function openStats(push){
   const consist=Math.min(100,Math.round(100*d28/24));
   document.getElementById('statssub').textContent=sessDays+' sessions';
   // lifts with data + standards
-  const liftNames=Object.keys(STD).filter(n=>bestE1rm(n)>0);
+  const MACH_ONLY=['Biceps Curls','Triceps Press Machine','Seated Leg Curl','Single-Leg Leg Press'];
+  const liftNames=Object.keys(STD).filter(n=>bestE1rm(n)>0&&!MACH_ONLY.includes(n));
   let pctHtml='';
   liftNames.forEach(n=>{
     const e=bestE1rm(n), ratio=e/BW;
@@ -1922,7 +1928,7 @@ function openStats(push){
     +'</div></div>'
     +'<div class="statcard"><h4>// Weekly tonnage — 8 weeks</h4><div style="display:flex;gap:5px;align-items:flex-end;height:74px">'+bars+'</div><div class="statnote">Total kg lifted per week (weight × reps). The line to watch during the cut: it should hold or climb while bodyweight drops.</div></div>'
     +(pctHtml?'<div class="statcard"><h4>// Strength percentile — Johnson protocol</h4>'+pctHtml
-      +'<div class="statnote">Estimates: best set → Epley e1RM ÷ 84 kg bodyweight, mapped to population strength standards for adult men, age-scaled (pool strength peaks ~25–35). Reading the bars: 60th percentile = stronger than 60 of 100 men in that pool; the fill shows how far along the curve you sit — 50 = dead average, 80+ = strong, 95+ = elite. Machine numbers vary between brands — treat trends as truth, percentiles as a compass.</div></div>':'')
+      +'<div class="statnote">Estimates: best set → Epley e1RM ÷ 84 kg bodyweight, mapped to population strength standards for adult men, age-scaled (pool strength peaks ~25–35). Reading the bars: 60th percentile = stronger than 60 of 100 men in that pool; the fill shows how far along the curve you sit — 50 = dead average, 80+ = strong, 95+ = elite. Machine-cam lifts (curls, triceps press, leg curl, leg press) show trends only \u2014 stack numbers aren\u2019t comparable across machines; compete against your own history there. Machine numbers vary between brands — treat trends as truth, percentiles as a compass.</div></div>':'')
     +(trendHtml?'<div class="statcard"><h4>// e1RM trends</h4>'+trendHtml+'<div class="statnote">Estimated one-rep max per session (weight × (1 + reps/30)). Up and to the right beats any single number.</div></div>':'')
     +(!real.length?'<div class="statcard"><div class="statnote">No logged sets yet — tap set chips with weight + reps and this screen comes alive.</div></div>':'');
   show('stats');
@@ -2140,6 +2146,8 @@ const DEFAULT_W = {
   'Incline Machine Press':35,
   'Rear Delt Fly':25,
   'Cable Face Pull':15,
+  'Lateral Raise (light)':10,
+  'Lat Pulldown (Thu top-up)':40,
   'Triceps Press Machine':30,
  'Leg Press (two-leg)':80,
   'Machine Lateral Raise':20,
@@ -2219,7 +2227,7 @@ function openSheet(di,ei,push){
     return `<button class="setchip${on?' on':''}" data-set="${s}" aria-pressed="${on}">${s+1}</button>`;
   }).join('');
   sheetScroll.innerHTML=`
-    <div class="sheetprog"><div class="sheetprogfill" id="sheetProgFill"></div></div>
+    <div class="sheetprog" title="whole-day progress"><div class="sheetprogfill" id="sheetProgFill"></div></div><div style="font-size:9px;letter-spacing:.12em;color:var(--mist);margin:-6px 0 8px">DAY PROGRESS</div>
     <h3>${e.name}</h3>
     ${e.mach?`<div class="machlab">🏷 ${e.mach}</div>`:''}
     <div class="rx">${e.rx}${e.tags.length?' &nbsp;·&nbsp; '+e.tags.map(t=>t==='sled'?'sled':t==='knee'?'knee-friendly':'clear w/ physio').join(' · '):''}</div>
