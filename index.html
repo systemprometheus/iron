@@ -499,6 +499,7 @@ h1 em{position:relative;text-shadow:0 0 34px rgba(255,46,151,.45);animation:flic
 <div id="toast"></div>
 
 <script>
+const APP_VERSION='v2.1 \u00b7 2026-09-23';
 /* =========================================================
    CHALKBOARD FIGURE ENGINE
    Skeletal stick figure, forward kinematics, keyframe lerp
@@ -1878,7 +1879,7 @@ function openStats(push){
   const cutoff=Date.now()-28*864e5;
   const d28=new Set(real.filter(l=>l.t>=cutoff).map(l=>new Date(l.t).toDateString())).size;
   const consist=Math.min(100,Math.round(100*d28/24));
-  document.getElementById('statssub').textContent=sessDays+' sessions';
+  document.getElementById('statssub').textContent=sessDays+' sessions \u00b7 '+APP_VERSION;
   // lifts with data + standards
   const MACH_ONLY=['Biceps Curls','Triceps Press Machine','Seated Leg Curl','Single-Leg Leg Press'];
   const liftNames=Object.keys(STD).filter(n=>bestE1rm(n)>0&&!MACH_ONLY.includes(n));
@@ -2296,9 +2297,6 @@ function openSheet(di,ei,push){
     <button class="ovwbtn" id="ovwBtn">▦ Day overview</button>`;
   show('ex');
   if(push!==false) history.pushState({s:'ex',di,ei},'');
-  const canvas=document.getElementById('animCanvas');
-  startAnim(canvas, e.anim);
-  document.getElementById('pauseBtn').addEventListener('click',ev=>togglePause(ev.currentTarget));
   const wi=document.getElementById('winp'), ri=document.getElementById('rinp');
   const mi=document.getElementById('minp');
   if(mi) mi.addEventListener('change',()=>{ if(!progress.machine)progress.machine={}; const v=mi.value.trim(); if(v)progress.machine[e.name]=v; else delete progress.machine[e.name]; saveProgress(); });
@@ -2386,5 +2384,7 @@ loadProgress().then(()=>{
 });
 if('serviceWorker' in navigator){ try{ navigator.serviceWorker.register('sw.js'); }catch(e){} }
 </script>
+<div style="position:fixed;bottom:4px;right:8px;font-size:9px;letter-spacing:.08em;color:rgba(255,255,255,.35);z-index:5;pointer-events:none" id="vbadge"></div>
+<script>document.getElementById('vbadge').textContent=APP_VERSION;</script>
 </body>
 </html>
