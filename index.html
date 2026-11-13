@@ -78,6 +78,14 @@
 .altrow{display:flex;align-items:center;gap:8px;margin:6px 0 4px}
 .altlab{font-family:var(--disp);font-size:10px;letter-spacing:.14em;color:var(--teal,#00F0FF);white-space:nowrap}
 .altsel{flex:1;background:rgba(0,240,255,.06);border:1px solid rgba(0,240,255,.4);color:#fff;border-radius:10px;padding:8px 10px;font-size:13px}
+.altnote{margin:6px 0 4px;padding:7px 10px;border-radius:10px;border:1px dashed rgba(0,240,255,.45);background:rgba(0,240,255,.05);font-size:11.5px;color:var(--chalk,#eee);line-height:1.45}
+.altnote b{color:var(--teal,#00F0FF)}
+.holdbox{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border:1.5px solid rgba(0,240,255,.45);border-radius:14px;padding:12px 14px;background:rgba(0,240,255,.05);margin-bottom:6px}
+.holddisp{font-family:var(--disp);font-size:34px;min-width:92px;color:#fff;font-variant-numeric:tabular-nums}
+.holddisp.hit{color:#FCEE0A}
+.holdsub{flex:1;min-width:120px;font-size:11.5px;color:var(--mist);line-height:1.4}
+.holdbtn{padding:12px 16px;border-radius:12px;border:1.5px solid var(--teal,#00F0FF);background:rgba(0,240,255,.12);color:#fff;font-family:var(--disp);font-size:13px;letter-spacing:.06em;cursor:pointer}
+.holdbtn.run{border-color:var(--pink,#FF2E97);background:rgba(255,46,151,.15)}
 .deloadbar{margin:0 0 12px;padding:11px 14px;border-radius:12px;border:1.5px solid var(--teal,#00F0FF);background:rgba(0,240,255,.08);color:var(--chalk,#eee);font-size:12.5px;letter-spacing:.03em;cursor:pointer;line-height:1.5}
 .deloadbar b{color:var(--teal,#00F0FF)}
 .dlhint{margin:8px 0 0;padding:8px 11px;border-radius:10px;border:1px solid rgba(0,240,255,.35);background:rgba(0,240,255,.05);font-size:12px;color:var(--teal,#00F0FF)}
@@ -505,7 +513,7 @@ h1 em{position:relative;text-shadow:0 0 34px rgba(255,46,151,.45);animation:flic
 <div id="toast"></div>
 
 <script>
-const APP_VERSION='v2.6 \u00b7 2026-11-10';
+const APP_VERSION='v2.8 \u00b7 2026-11-13';
 /* =========================================================
    CHALKBOARD FIGURE ENGINE
    Skeletal stick figure, forward kinematics, keyframe lerp
@@ -1423,13 +1431,21 @@ function award(id, msg){
 function totalSets(){ let n=0; for(const d in progress.chips) for(const e in progress.chips[d]) n+=progress.chips[d][e]; return n; }
 
 /* ---- one set completed: xp, streak, weight log, PR, celebrations ---- */
-function onSetLogged(di, exName, weight, reps){
+function onSetLogged(di, exName, weight, reps, secs){
   progress.xp += 10;
   progress.days[todayKey()]=(progress.days[todayKey()]||0)+1;
   if(navigator.vibrate) navigator.vibrate(28);
   const ms = bumpStreak();
   let prMsg=null;
-  if(weight && weight>0){
+  if(secs && secs>0){
+    const names=allNamesFor(exName);
+    const prevS = progress.log.filter(l=>names.includes(l.e)).reduce((m,l)=>Math.max(m,l.s||0),0);
+    progress.log.push({t:Date.now(), d:di, e:exName, w:weight||0, r:0, s:secs});
+    if(!progress.lastS) progress.lastS={};
+    progress.lastS[exName]=secs;
+    if(weight) progress.lastW[exName]=weight;
+    if(prevS>0 && secs>prevS){ progress.xp += 25; prMsg='<em>NEW PR!</em> '+exName+' \u00b7 '+fmtHold(secs); if(!progress.prs) progress.prs=[]; progress.prs.push(Date.now()); }
+  } else if(weight && weight>0){
     const names=allNamesFor(exName);
     const prev = progress.log.filter(l=>names.includes(l.e)).reduce((m,l)=>Math.max(m,l.w||0),0);
     progress.log.push({t:Date.now(), d:di, e:exName, w:weight, r:reps||0});
@@ -1442,6 +1458,16 @@ function onSetLogged(di, exName, weight, reps){
       progress.prs.push(Date.now());
     }
     if(prev===0) award('first_w','First weight logged — the graph begins 📈');
+  } else if(false){
+    const names=allNamesFor(exName);
+    const prevS = progress.log.filter(l=>names.includes(l.e)).reduce((m,l)=>Math.max(m,l.s||0),0);
+    progress.log.push({t:Date.now(), d:di, e:exName, w:0, r:0, s:secs});
+    if(!progress.lastS) progress.lastS={};
+    progress.lastS[exName]=secs;
+    if(prevS>0 && secs>prevS){ progress.xp += 25; prMsg='<em>NEW PR!</em> '+exName+' · '+fmtHold(secs); if(!progress.prs) progress.prs=[]; progress.prs.push(Date.now()); }
+  } else {
+    progress.log.push({t:Date.now(), d:di, e:exName, w:0, r:reps||0});
+    if(reps) progress.lastR[exName]=reps;
   }
   award('first_set','First set in the books. It counts. 💪');
   const ts=totalSets();
@@ -1541,11 +1567,11 @@ function renderHeat(){
 
 /* ---- CSV export ---- */
 function exportCSV(){
-  const rows=[['date','exercise','weight_kg','reps']];
+  const rows=[['date','exercise','weight_kg','reps','seconds']];
   progress.log.forEach(l=>{
     if(l.demo) return;
     const d=new Date(l.t);
-    rows.push([d.toISOString().slice(0,10), '"'+l.e.replace(/"/g,'""')+'"', l.w||'', l.r||'']);
+    rows.push([d.toISOString().slice(0,10), '"'+l.e.replace(/"/g,'""')+'"', l.w||'', l.r||'', l.s||'']);
   });
   const csv=rows.map(r=>r.join(',')).join('\n');
   const a=document.createElement('a');
@@ -1769,7 +1795,7 @@ function openLog(push){
       const byEx={};
       ls.slice().reverse().forEach(l=>{ (byEx[l.e]=byEx[l.e]||[]).push(l); });
       const rows=Object.keys(byEx).map(e=>{
-        const sets=byEx[e].map(l=> l.w? (l.w+'kg'+(l.r?'×'+l.r:'')) : (l.r? l.r+' reps':'✓') ).join(' · ');
+        const sets=byEx[e].map(fmtEntry).join(' · ');
         return '<div style="display:flex;justify-content:space-between;gap:10px;padding:5px 0;border-bottom:1px dashed rgba(255,255,255,.07);font-size:13px"><span>'+e+(byEx[e][0].demo?' <i style="opacity:.5">(demo)</i>':'')+'</span><span style="color:var(--mist);text-align:right">'+sets+'</span></div>';
       }).join('');
       return '<section style="margin:14px 0;padding:12px 14px;border:1px solid rgba(255,255,255,.1);border-radius:12px;background:rgba(255,255,255,.03)">'+
@@ -2138,14 +2164,19 @@ const sheetScroll=document.getElementById('sheetScroll');
 let sheetOpenFor=null, timerInt=null;
 
 /* ---- per-exercise progress chart ---- */
+function e1rmOf(w,r){ return r>1 ? w*(1+r/30) : w; }
 function sessionsFor(exName){
   const byDay={}, names=allNamesFor(exName);
   progress.log.forEach(l=>{
-    if(!names.includes(l.e) || !l.w) return;
+    if(!names.includes(l.e) || (!l.w && !l.s)) return;
     const k=new Date(l.t); const kk=k.getFullYear()+'-'+String(k.getMonth()+1).padStart(2,'0')+'-'+String(k.getDate()).padStart(2,'0');
-    byDay[kk]=Math.max(byDay[kk]||0, l.w);
+    if(l.s && !l.w){ const c=byDay[kk]; if(!c||l.s>c.e1) byDay[kk]={w:0,r:0,s:l.s,e1:l.s,maxw:l.s}; return; }
+    const e1=e1rmOf(l.w,l.r||0);
+    const cur=byDay[kk];
+    if(!cur || e1>cur.e1 || (e1===cur.e1 && l.w>cur.w)) byDay[kk]={w:l.w, r:l.r||0, e1:e1, maxw:Math.max(l.w, cur?cur.maxw:0)};
+    else cur.maxw=Math.max(cur.maxw,l.w);
   });
-  return Object.keys(byDay).sort().map(k=>({d:k, w:byDay[k]}));
+  return Object.keys(byDay).sort().map(k=>({d:k, w:byDay[k].w, r:byDay[k].r, s:byDay[k].s||0, e1:byDay[k].e1, maxw:byDay[k].maxw}));
 }
 function lastSessionVol(exName){
   const names=allNamesFor(exName), byDay={};
@@ -2164,45 +2195,60 @@ function chartHtml(exName){
   return `<div class="chartwrap">
     <div class="setlabel">Progress over time</div>
     <div class="cstats">${ss.length?`<span>best <b>${best} kg</b></span><span>last <b>${last} kg</b></span><span>vol <b>${lastSessionVol(exName)} kg</b></span><span>${ss.length} session${ss.length>1?'s':''}</span>`:''}</div>
-    <div class="chartbox" id="chartbox">${ss.length>=2?'<canvas id="chartCv" width="600" height="180" style="width:100%;height:auto;display:block"></canvas>':'<div class="chartempty">Log a weight with your sets — after two sessions this becomes your progress graph. 📈</div>'}</div>
+    <div class="chartbox" id="chartbox">${ss.length>=2?'<canvas id="chartCv" width="600" height="200" style="width:100%;height:auto;display:block"></canvas>':'<div class="chartempty">Log a weight with your sets — after two sessions this becomes your progress graph. 📈</div>'}</div>
   </div>`;
 }
 function drawChart(exName){
   const ss=sessionsFor(exName).slice(-14);
   const box=document.getElementById('chartbox'); if(!box) return;
   if(ss.length<2){ box.innerHTML='<div class="chartempty">Log a weight with your sets — after two sessions this becomes your progress graph. 📈</div>'; return; }
-  if(!document.getElementById('chartCv')) box.innerHTML='<canvas id="chartCv" width="600" height="180" style="width:100%;height:auto;display:block"></canvas>';
+  if(!document.getElementById('chartCv')) box.innerHTML='<canvas id="chartCv" width="600" height="200" style="width:100%;height:auto;display:block"></canvas>';
   const cv=document.getElementById('chartCv'), g=cv.getContext('2d');
-  g.clearRect(0,0,600,180);
-  const pad={l:44,r:16,t:16,b:26};
-  const ws=ss.map(s=>s.w);
-  let lo=Math.min(...ws), hi=Math.max(...ws);
+  const H=200; cv.height=H;
+  g.clearRect(0,0,600,H);
+  const pad={l:44,r:16,t:30,b:26};
+  const vals=ss.map(s=>s.e1).concat(ss.map(s=>s.maxw));
+  let lo=Math.min(...vals), hi=Math.max(...vals);
   if(lo===hi){ lo-=2.5; hi+=2.5; } else { const m=(hi-lo)*.15; lo-=m; hi+=m; }
   const X=i=>pad.l+(600-pad.l-pad.r)*(ss.length===1?0.5:i/(ss.length-1));
-  const Y=w=>pad.t+(180-pad.t-pad.b)*(1-(w-lo)/(hi-lo));
+  const Y=v=>pad.t+(H-pad.t-pad.b)*(1-(v-lo)/(hi-lo));
   // gridlines
   g.strokeStyle='rgba(242,237,226,.12)'; g.lineWidth=1; g.font='11px ui-monospace,monospace'; g.fillStyle='rgba(242,237,226,.55)';
-  [lo+(hi-lo)*.1, (lo+hi)/2, hi-(hi-lo)*.1].forEach(w=>{
-    const y=Y(w);
+  [lo+(hi-lo)*.1, (lo+hi)/2, hi-(hi-lo)*.1].forEach(v=>{
+    const y=Y(v);
     g.beginPath(); g.moveTo(pad.l,y); g.lineTo(600-pad.r,y); g.stroke();
-    g.fillText((Math.round(w*2)/2)+'', 6, y+4);
+    g.fillText((Math.round(v*2)/2)+'', 6, y+4);
   });
-  // line
-  const best=Math.max(...ws);
+  // legend
+  g.font='10px ui-monospace,monospace';
+  g.fillStyle='#FF2E97'; g.fillRect(pad.l,8,14,3); g.fillStyle='rgba(242,237,226,.7)'; g.fillText(ss.some(s=>s.s)?'best time per session (s)':'est. 1RM (kg × reps)', pad.l+20, 13);
+  g.fillStyle='rgba(0,240,255,.55)'; g.fillRect(pad.l+170,8,14,3); g.fillStyle='rgba(242,237,226,.7)'; g.fillText('top weight', pad.l+190, 13);
+  // faint weight line
+  g.strokeStyle='rgba(0,240,255,.45)'; g.lineWidth=1.5; g.setLineDash([4,4]); g.beginPath();
+  ss.forEach((s,i)=>{ const x=X(i),y=Y(s.maxw); i?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke(); g.setLineDash([]);
+  // e1RM line
+  const best=Math.max(...ss.map(s=>s.e1));
   g.strokeStyle='#FF2E97'; g.lineWidth=3; g.lineJoin='round'; g.beginPath();
-  ss.forEach((s,i)=>{ const x=X(i),y=Y(s.w); i?g.lineTo(x,y):g.moveTo(x,y); });
-  g.stroke();
-  // dots (PR in yellow)
+  ss.forEach((s,i)=>{ const x=X(i),y=Y(s.e1); i?g.lineTo(x,y):g.moveTo(x,y); }); g.stroke();
+  // dots + kg×reps labels (PR dot yellow)
+  g.font='10px ui-monospace,monospace';
   ss.forEach((s,i)=>{
-    g.beginPath(); g.arc(X(i),Y(s.w), s.w===best?6:4, 0, Math.PI*2);
-    g.fillStyle = s.w===best ? '#FCEE0A' : '#FDEFF8';
-    g.fill();
+    const x=X(i), y=Y(s.e1);
+    g.beginPath(); g.arc(x,y, s.e1===best?6:4, 0, Math.PI*2);
+    g.fillStyle = s.e1===best ? '#FCEE0A' : '#FDEFF8'; g.fill();
+    // label every point if few, else every other + last
+    if(ss.length<=8 || i%2===ss.length%2 || i===ss.length-1){
+      const lbl=s.s?fmtHold(s.s):s.r?`${s.w}×${s.r}`:`${s.w}`;
+      g.fillStyle='rgba(242,237,226,.85)';
+      const tw=g.measureText(lbl).width;
+      g.fillText(lbl, Math.min(Math.max(x-tw/2,pad.l-10),600-pad.r-tw), y-10);
+    }
   });
   // x labels: first + last date
-  g.fillStyle='rgba(242,237,226,.55)';
-  g.fillText(ss[0].d.slice(5), pad.l-6, 174);
+  g.fillStyle='rgba(242,237,226,.55)'; g.font='11px ui-monospace,monospace';
+  g.fillText(ss[0].d.slice(5), pad.l-6, H-6);
   const lastLbl=ss[ss.length-1].d.slice(5);
-  g.fillText(lastLbl, 600-pad.r-30, 174);
+  g.fillText(lastLbl, 600-pad.r-30, H-6);
 }
 
 /* suggested starting weights (kg) — shown until your first logged weight replaces them */
@@ -2254,7 +2300,7 @@ function prevSets(exName){
 function prevSetsLine(exName){
   const ps=prevSets(exName);
   if(!ps) return '';
-  const s=ps.map(l=> l.w? (l.w+'\u00d7'+(l.r||'?')) : (l.r? l.r+' reps':'\u2713')).join(' \u00b7 ');
+  const s=ps.map(l=> l.s? fmtHold(l.s) : l.w? (l.w+'\u00d7'+(l.r||'?')) : (l.r? l.r+' reps':'\u2713')).join(' \u00b7 ');
   const d=new Date(ps[0].t).toLocaleDateString(undefined,{day:'numeric',month:'short'});
   return '<div class="prevline">Last time ('+d+'): <b>'+s+'</b></div>';
 }
@@ -2342,11 +2388,13 @@ function effectiveEx(di,ei){
 }
 function openSheet(di,ei,push){
   stopAnim();
+  if(gHoldInt){ clearInterval(gHoldInt); gHoldInt=null; }
   const e=effectiveEx(di,ei); sheetOpenFor=[di,ei]; activeDay=di;
   const nav=document.getElementById('exnav'), np=document.getElementById('expctEl');
   if(nav) nav.textContent=WD[di].toUpperCase()+' // EX '+String(ei+1).padStart(2,'0')+'/'+String(DAYS[di].ex.length).padStart(2,'0');
   if(np) np.textContent='';
   const cue=CUES[e.anim]||{c:[],m:[]};
+  const workSec=workSecOf(e), sideEx=isSideEx(e);
   const chips=Array.from({length:e.sets},(_,s)=>{
     const on=getDone(di,ei)>s;
     return `<button class="setchip${on?' on':''}" data-set="${s}" aria-pressed="${on}">${s+1}</button>`;
@@ -2360,6 +2408,7 @@ function openSheet(di,ei,push){
         <option value="" ${cur?'':'selected'}>${base.name}</option>
         ${opts.map(o=>`<option value="${o.replace(/"/g,'&quot;')}" ${cur===o?'selected':''}>${o}</option>`).join('')}
       </select></div>`;})()}
+    ${e.isAlt?`<div class="altnote">⇄ Logging as <b>${e.name}</b> — weight, reps, seat and graph below are this exercise's own, not ${e.baseName}'s.</div>`:''}
     ${e.mach?`<div class="machlab">🏷 ${e.mach}</div>`:''}
     <div class="rx">${e.rx}${e.tags.length?' &nbsp;·&nbsp; '+e.tags.map(t=>t==='sled'?'sled':t==='knee'?'knee-friendly':'clear w/ physio').join(' · '):''}</div>
     ${(()=>{const d=DETAILS[e.name];if(!d)return e.note?`<p style="margin-top:10px;font-size:13px;color:var(--mist);line-height:1.5">${e.note}</p>`:'';
@@ -2381,16 +2430,22 @@ function openSheet(di,ei,push){
       <button class="wbtn" id="wplus">+2.5</button>
     </div>
     <div class="wrow">
-      <button class="wbtn" id="rminus">−1</button>
-      <input class="winp" id="rinp" type="number" inputmode="numeric" step="1" min="0" placeholder="reps" value="${progress.lastR[e.name]||''}">
-      <button class="wbtn" id="rplus">+1</button>
-      <span class="wunit">empty = bodyweight / timed</span>
+      <button class="wbtn" id="rminus">${workSec?"−5":"−1"}</button>
+      <input class="winp" id="rinp" type="number" inputmode="numeric" step="1" min="0" placeholder="${workSec?'sec':'reps'}" value="${workSec?((progress.lastS&&progress.lastS[e.name])||workSec):(progress.lastR[e.name]||'')}">
+      <button class="wbtn" id="rplus">${workSec?"+5":"+1"}</button>
+      <span class="wunit">${workSec?'seconds per set \u00b7 the timer fills this':'empty = bodyweight'}</span>
     </div>
     <div class="wrow">
       <span class="wunit" style="min-width:64px">⚙ setting</span>
       <input class="winp" id="minp" type="text" maxlength="24" placeholder="e.g. seat 4 · back 7" value="${(progress.machine&&progress.machine[e.name])||''}" style="text-align:left">
     </div>
-    <div class="setlabel">Sets — tap as you finish</div>
+    ${workSec?`<div class="setlabel">⏱ ${sideEx?'Hold timer \u00b7 each side':'Work timer'} \u00b7 target ${fmtHold(workSec)}</div>
+    <div class="holdbox">
+      <span class="holddisp" id="holdDisp">0:00</span>
+      <span class="holdsub" id="holdSub">${sideEx?'side 1 of 2 \u00b7 5 s get-ready, then go':'5 s get-ready, then go'}</span>
+      <button class="holdbtn" id="holdBtn">▶ Start${sideEx?' side 1':''}</button>
+    </div>`:''}
+    <div class="setlabel">Sets — ${workSec?'the timer ticks these, or tap':'tap as you finish'}</div>
     <div class="setrow">${chips}</div>
     ${prevSetsLine(e.name)}
     ${deloadActive()&&(progress.lastW[e.name]||DEFAULT_W[e.name])?`<div class="dlhint">🧪 Light week: use ~${Math.round(((progress.lastW[e.name]||DEFAULT_W[e.name])*DELOAD.pct)/2.5)*2.5} kg (65% of ${progress.lastW[e.name]||DEFAULT_W[e.name]})</div>`:''}
@@ -2413,15 +2468,16 @@ function openSheet(di,ei,push){
   if(mi) mi.addEventListener('change',()=>{ if(!progress.machine)progress.machine={}; const v=mi.value.trim(); if(v)progress.machine[e.name]=v; else delete progress.machine[e.name]; saveProgress(); });
   document.getElementById('wminus').addEventListener('click',()=>{ wi.value=Math.max(0,(parseFloat(wi.value)||0)-2.5); });
   document.getElementById('wplus').addEventListener('click',()=>{ wi.value=(parseFloat(wi.value)||0)+2.5; });
-  document.getElementById('rminus').addEventListener('click',()=>{ ri.value=Math.max(0,(parseInt(ri.value)||0)-1); });
-  document.getElementById('rplus').addEventListener('click',()=>{ ri.value=(parseInt(ri.value)||0)+1; });
+  document.getElementById('rminus').addEventListener('click',()=>{ ri.value=Math.max(0,(parseInt(ri.value)||0)-(workSec?5:1)); });
+  document.getElementById('rplus').addEventListener('click',()=>{ ri.value=(parseInt(ri.value)||0)+(workSec?5:1); });
   const nb=document.getElementById('nextBtn');
   if(nb) nb.addEventListener('click',()=>openSheet(di,ei+1));
   const altSel=document.getElementById('altSel');
   if(altSel) altSel.addEventListener('change',()=>{
     setActiveAlt(di,ei,altSel.value||null);
     setDone(di,ei,0);
-    toast('⇄ Slot set to <em>'+(altSel.value||DAYS[di].ex[ei].name)+'</em>');
+    const nm=altSel.value||DAYS[di].ex[ei].name;
+    toast('⇄ Now logging as <em>'+nm+'</em> · '+((progress.lastW[nm]||DEFAULT_W[nm])?'prefilled '+(progress.lastW[nm]||DEFAULT_W[nm])+' kg':'enter its own weight'));
     openSheet(di,ei,false);
   });
   const db=document.getElementById('doneBtn');
@@ -2435,7 +2491,8 @@ function openSheet(di,ei,push){
       const nv = (cur===s+1)? s : s+1;
       setDone(di,ei,nv);
       if(nv>cur){
-        onSetLogged(di, e.name, parseFloat(wi.value)||0, parseInt(ri.value)||0);
+        if(workSec) onSetLogged(di, e.name, parseFloat(wi.value)||0, 0, parseInt(ri.value)||workSec);
+        else onSetLogged(di, e.name, parseFloat(wi.value)||0, parseInt(ri.value)||0);
         const rs=restSecOf(e.rx);
         if(rs) startTimer(rs);
       } else { onSetRemoved(di, e.name); }
@@ -2450,6 +2507,45 @@ function openSheet(di,ei,push){
       updateSheetProg(di);
     });
   });
+  const hb=document.getElementById('holdBtn');
+  if(hb){
+    const hd=document.getElementById('holdDisp'), hs=document.getElementById('holdSub');
+    let phase='idle', t0=0, side=1, s1=0, hit=false;
+    const setIdle=()=>{ phase='idle'; hb.textContent='▶ Start'+(sideEx?' side '+side:''); hb.classList.remove('run'); hd.classList.remove('hit'); };
+    const finish=()=>{
+      clearInterval(gHoldInt); gHoldInt=null;
+      const secs=Math.max(1,Math.round((Date.now()-t0)/1000));
+      if(sideEx && side===1){ s1=secs; side=2; setIdle(); hd.textContent='0:00'; hs.textContent='side 1: '+fmtHold(secs)+' \u00b7 switch, then start side 2'; return; }
+      const logged=sideEx?Math.min(s1,secs):secs;
+      hs.textContent='logged '+fmtHold(logged)+(sideEx?' (sides '+s1+' / '+secs+' s \u2014 shorter side counts)':'');
+      side=1; s1=0; setIdle();
+      ri.value=logged;
+      const chipEls=sheetScroll.querySelectorAll('.setchip'), cur=getDone(di,ei);
+      if(cur<chipEls.length) chipEls[cur].click();
+      else { onSetLogged(di, e.name, parseFloat(wi.value)||0, 0, logged); drawChart(e.name); renderHeat(); toast('Extra set logged \u00b7 '+fmtHold(logged)); }
+    };
+    hb.addEventListener('click',()=>{
+      if(phase==='idle'){
+        try{ gAudio=gAudio||new (window.AudioContext||window.webkitAudioContext)(); if(gAudio.state==='suspended') gAudio.resume(); }catch(_){}
+        phase='ready'; hit=false; const r0=Date.now(); hb.textContent='\u2715 Cancel'; hb.classList.add('run');
+        gHoldInt=setInterval(()=>{
+          if(phase==='ready'){
+            const left=5-Math.floor((Date.now()-r0)/1000);
+            if(left>0){ hd.textContent=left; hs.textContent='get ready\u2026'; return; }
+            phase='run'; t0=Date.now(); beep(880,.15); if(navigator.vibrate) navigator.vibrate(80); hb.textContent='\u25a0 Stop & log';
+          }
+          const el=Math.floor((Date.now()-t0)/1000);
+          hd.textContent=fmt(el);
+          if(!hit) hs.textContent=(sideEx?'side '+side+' of 2 \u00b7 ':'')+'target '+fmtHold(workSec);
+          if(!hit && el>=workSec){
+            hit=true; hd.classList.add('hit'); beep(1320,.3); if(navigator.vibrate) navigator.vibrate([150,80,150]);
+            if(workSec>=120) finish(); else hs.textContent='target hit \u2014 keep holding or stop';
+          }
+        },200);
+      } else if(phase==='ready'){ clearInterval(gHoldInt); gHoldInt=null; setIdle(); hd.textContent='0:00'; hs.textContent='cancelled'; }
+      else finish();
+    });
+  }
   drawChart(e.name);
   sheetScroll.querySelectorAll('.tbtn[data-t]').forEach(b=>{
     b.addEventListener('click',()=>startTimer(+b.dataset.t));
@@ -2479,6 +2575,19 @@ function startTimer(sec){
   timerInt=setInterval(tickTimer,250); tickTimer();
 }
 function stopTimer(){ gEnd=0; if(timerInt){clearInterval(timerInt);timerInt=null;} tickTimer(); }
+function fmtHold(s){ return s>=120 ? fmt(s) : s+' s'; }
+function fmtEntry(l){ return l.s ? ((l.w?l.w+'kg \u00b7 ':'')+fmtHold(l.s)) : l.w ? (l.w+'kg'+(l.r?'\u00d7'+l.r:'')) : (l.r ? l.r+' reps' : '\u2713'); }
+function workSecOf(e){
+  const rx=(e.rx||'').split(/rest/i)[0];
+  let m=rx.match(/\u00d7\s*(\d+)(?:\s*[\u2013\-]\s*(\d+))?\s*(s|min)\b/);
+  if(m) return (+(m[2]||m[1]))*(m[3]==='min'?60:1);
+  m=rx.match(/^\s*(\d+)(?:\s*[\u2013\-]\s*(\d+))?\s*min\b/);
+  if(m) return (+m[1])*60;
+  return 0;
+}
+function isSideEx(e){ return /\/\s*side|per side|each side/i.test(e.rx||''); }
+let gHoldInt=null, gAudio=null;
+function beep(f,d){ try{ if(!gAudio) return; const o=gAudio.createOscillator(), g=gAudio.createGain(); o.frequency.value=f; o.connect(g); g.connect(gAudio.destination); g.gain.setValueAtTime(.25,gAudio.currentTime); g.gain.exponentialRampToValueAtTime(.001,gAudio.currentTime+d); o.start(); o.stop(gAudio.currentTime+d); }catch(_){} }
 function restSecOf(rx){
   let m=rx.match(/rest\s+(\d+)(?:\s*[\u2013\-]\s*(\d+))?\s*s/i);
   if(m) return +(m[2]||m[1]);
